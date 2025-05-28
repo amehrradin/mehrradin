@@ -1,0 +1,33 @@
+import pytesseract
+from PIL import Image, ImageEnhance, ImageFilter, ImageOps
+import os
+
+# مسیر فولدر عکس‌ها
+image_folder = r"C:\Users\AD.ML\Downloads\Dataset"
+# مسیر نصب Tesseract
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+# لیست فرمت‌های معتبر عکس
+valid_extensions = (".png", ".jpg", ".jpeg")
+
+# باز کردن فایل خروجی
+with open("converted_images.txt", mode="w", encoding="utf-8") as output_file:
+    for filename in sorted(os.listdir(image_folder)):
+        if filename.lower().endswith(valid_extensions):
+            image_path = os.path.join(image_folder, filename)
+            try:
+                img = Image.open(image_path)
+
+                #  پیش‌پردازش برای بهبود OCR
+                img = img.convert("L")  # خاکستری
+                img = img.resize((img.width * 2, img.height * 2))  # افزایش وضوح
+                img = ImageEnhance.Contrast(img).enhance(2)  # افزایش کنتراست
+                img = img.filter(ImageFilter.SHARPEN)  # شارپ کردن تصویر
+
+                # انجام OCR
+                custom_config = r'--psm 6'
+                text = pytesseract.image_to_string(img, lang="fas", config=custom_config).strip().replace('\n', ' ')
+
+                output_file.write(f"{filename} → {text}\n")
+            except Exception as e:
+                output_file.write(f"{filename} → خطا در پردازش تصویر: {e}\n")
